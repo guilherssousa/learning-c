@@ -138,3 +138,72 @@ e tudo pode acontecer durante a execução do seu programa."
 "tudo" significa coisas como achar zeros, achar números lixo ou crashar.
 A especificação do C diz que nessa circunstância o compilador pode emitir código
 que não faz nada.
+
+## Arrays multidimensionais
+
+Você pode adicionar quantas dimensões quiser para os seus arrays. Elas são
+armazenadas em "row-major order", o que significa que num array 2D,
+o primeiro índice indica a linha e o segundo a coluna.
+
+## Arrays e Ponteiros
+
+### Pegando o ponteiro de um Array
+
+Quando um programador C fala de pegar um ponteiro para um array,
+ele está falando sobre pegar o primeiro elemento do array.
+
+```c
+#include <stdio.h>
+
+int main(void) {
+    int a[5] = { 11, 22, 33, 44, 55 };
+    int *p;
+
+    p = &a[0]; // p aponta para o primeiro elemento do array
+
+    printf("%d\n", *p); // Printa 11
+}
+```
+
+Isso é tão comum que a linguagem nos permite um atalho:
+
+```c
+p = &a[0];
+p = a;
+```
+
+Apenas se referir ao nome do array em isolado é o mesmo que pegar um
+ponteiro para o primeiro elemento do array!
+
+Mas pera, `p` não é um `int*`? E `*p` nos dá `11`, a mesma coisa que `a[0]`?
+
+### Passando arrays unidimensionais para funções
+
+Vamos fazer um exemplo com um array unidimensional.
+
+```c
+void times2(int *a, int len);
+void times3(int a[], int len);
+void times4(int a[5], int len);
+```
+
+Dessas três asssinaturas, a primeira é a mais usada pelos regulares do C.
+
+O compilador não se importa com o número que você passa para len, desde
+que seja maior que zero. Esese número só importa quando se passa arrays
+multidimensionais.
+
+### Alterando Arrays em funções
+
+Arrays são apenas ponteiros disfarçados. Se a função tem o ponteiro para
+o dado, isso significa que é possível manipular esse dado!
+
+### Passando Arrays multidimensionais para funções
+
+A história muda quando estamos falando de arrays multidimensionais.
+O C precisa saber de todas as dimensões (exceto a primeira) para ter 
+informação o suficiente sobre como achar o valor na memória.
+
+O compilador não checa os limites de um array no momento de compilação
+e o C também faz zero runtime checking desses limites.
+
