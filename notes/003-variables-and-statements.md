@@ -131,3 +131,11 @@ e falsa, o do-while ira executar uma unica vez, enquanto o while nao executara n
 ## Switch
 
 A unica informacao util que deveriamos saber em C e que e necessario dar break no Switch.
+
+Tambem, o `switch` só funciona bem com integer types. Não use floats nem strings aqui. Apesar que voce pode usar chars e enums.
+
+## Listas de parametros vazias
+
+Voce pode ver esses em códigos mais antigos, mas você não deveria fazer um desses
+no seu código novo. Sempre use `void` para indicar que uma função não recebe
+parâmetros.
