@@ -63,4 +63,12 @@ int main(void) {
   fputs("Hello, world!\n", fp);
 
   fclose(fp);
+
+  unsigned char bytes[6] = {5, 37, 0, 88, 255, 12};
+
+  fp = fopen("output.bin", "wb"); // wb is write binary
+
+  fwrite(bytes, sizeof(char), 6, fp);
+
+  fclose(fp);
 }

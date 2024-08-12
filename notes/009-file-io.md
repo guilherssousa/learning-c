@@ -98,3 +98,18 @@ int main(void)
     fclose(fp);
 }
 ```
+
+## Binary File I/O
+
+A única diferença entre abrir um arquivo binário pra um de texto é a flag `b`.
+Como streams de bytes podem conter `NUL`, é raro usar funções como `fprintf()`
+nesses tipos de arquivos. Os mais comuns são `fread()` e `fwrite()`.
+
+## `struct` e number caveats
+
+Os compiladores podem usar padding em structs e alterar a ordem de números
+dependendo do compilador e do `endianess` da arquitetura.
+
+Para resolver esse problema, o comum é serializar os dados para um formato
+que possamos controlar e interpretar. Felizmente, isso é um problema que já
+foi resolvido, como por exemplo, com `protobuf` do Google.
