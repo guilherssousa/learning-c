@@ -21,7 +21,8 @@ int main(void) {
   mpca_lang(MPCA_LANG_DEFAULT, "             \
     number : /-?[0-9]+/ ;                    \
     symbol : \"list\" | \"head\" | \"tail\"  \
-           | \"join\" | \"eval\" | '+' | '-' \
+           | \"join\" | \"eval\" | \"len\"   \
+           | '+' | '-'                       \
            | \"**\" | '*' | '/' | '%' ;      \
     sexpr  : '(' <expr>* ')' ;               \
     qexpr  : '{' <expr>* '}' ;               \

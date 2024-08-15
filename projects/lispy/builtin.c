@@ -97,13 +97,30 @@ lval *builtin_tail(lval *a) {
   /* If Q-Expression is empty */
   LASSERT(a, a->cell[0]->count != 0, "Function 'tail' passed {}!");
 
-  /* Take first agrument */
+  /* Take first argument */
   lval *v = lval_take(a, 0);
 
   /* Delete first argument and return */
   lval_del(lval_pop(v, 0));
 
   return v;
+}
+
+lval *builtin_len(lval *a) {
+  /* Check Error Conditions */
+  LASSERT(a, a->count == 1, "Function 'len' passed too many arguments.");
+
+  /* Only Q-Expressions should be evaluated by Head */
+  LASSERT(a, a->cell[0]->type == LVAL_QEXPR,
+          "Function 'len' passed incorrect types!");
+
+  /* Take the first agrument */
+  lval *v = lval_take(a, 0);
+
+  /* Delete element and return */
+  lval_del(v);
+
+  return lval_num(v->count);
 }
 
 /* Transform a S-Expression into a Q-Expression */
@@ -117,7 +134,7 @@ lval *builtin_list(lval *a) {
 lval *builtin_eval(lval *a) {
   LASSERT(a, a->count == 1, "Function 'eval' passed too many arguments!");
   LASSERT(a, a->cell[0]->type == LVAL_QEXPR,
-          "Functoin 'eval' passed incorrect type!");
+          "Function 'eval' passed incorrect type!");
 
   lval *x = lval_take(a, 0);
   x->type = LVAL_SEXPR;
@@ -125,7 +142,7 @@ lval *builtin_eval(lval *a) {
   return lval_eval(x);
 }
 
-/* Join multiple Q-Expressions into one */
+/* Return the length of a Q-Expression */
 lval *builtin_join(lval *a) {
   for (int i = 0; i < a->count; i++) {
     LASSERT(a, a->cell[i]->type == LVAL_QEXPR,
@@ -151,6 +168,9 @@ lval *builtin(lval *a, char *func) {
 
   if (strcmp("tail", func) == 0)
     return builtin_tail(a);
+
+  if (strcmp("len", func) == 0)
+    return builtin_len(a);
 
   if (strcmp("join", func) == 0)
     return builtin_join(a);
