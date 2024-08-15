@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "builtin.h"
 #include "lval.h"
 
 /* create a new number type lval */
@@ -97,13 +98,6 @@ void lval_del(lval *v) {
   free(v);
 }
 
-/* Create a pointer to a new Number lval */
-lval *lval_read_num(mpc_ast_t *t) {
-  errno = 0;
-  long x = strtol(t->contents, NULL, 10);
-  return errno != ERANGE ? lval_num(x) : lval_err("Invalid number");
-}
-
 /* Read the AST and return a Lisp Value */
 lval *lval_read(mpc_ast_t *t) {
   /*   If Symbol or Number, return conversion to that type */
@@ -143,4 +137,131 @@ lval *lval_read(mpc_ast_t *t) {
   }
 
   return x;
+}
+
+/* Create a pointer to a new Number lval */
+lval *lval_read_num(mpc_ast_t *t) {
+  errno = 0;
+  long x = strtol(t->contents, NULL, 10);
+  return errno != ERANGE ? lval_num(x) : lval_err("Invalid number");
+}
+
+lval *lval_join(lval *x, lval *y) {
+  while (y->count) {
+    x = lval_add(x, lval_pop(y, 0));
+  }
+
+  lval_del(y);
+  return x;
+}
+
+lval *lval_pop(lval *v, int i) {
+  /* Find item at "i" */
+  lval *x = v->cell[i];
+
+  /* Shift memory after the item at "i" over the top */
+  memmove(&v->cell[i], &v->cell[i + 1], sizeof(lval *) * (v->count - i - 1));
+
+  /* Decrease the count of items in the list */
+  v->count--;
+
+  /* Reallocate the memory used */
+  v->cell = realloc(v->cell, sizeof(lval *) * v->count);
+  return x;
+}
+
+lval *lval_take(lval *v, int i) {
+  lval *x = lval_pop(v, i);
+  lval_del(v);
+  return x;
+}
+
+/* Receive a Lisp Value and evaluate it */
+lval *lval_eval(lval *v) {
+  /* Evaluate S-Expressions */
+  if (v->type == LVAL_SEXPR) {
+    return lval_eval_sexpr(v);
+  }
+
+  /* Other types remain the same */
+  return v;
+}
+
+/* Receives an S-Expression and evaluates its value */
+lval *lval_eval_sexpr(lval *v) {
+  /* Evaluate children */
+  for (int i = 0; i < v->count; i++) {
+    v->cell[i] = lval_eval(v->cell[i]);
+  }
+
+  /* Error checking */
+  for (int i = 0; i < v->count; i++) {
+    if (v->cell[i]->type == LVAL_ERR) {
+      return lval_take(v, i);
+    }
+  }
+
+  /* Empty Expression */
+  if (v->count == 0)
+    return v;
+
+  /* Single expression */
+  if (v->count == 1)
+    return lval_take(v, 0);
+
+  /* Ensure first element is a symbol */
+  lval *f = lval_pop(v, 0);
+  if (f->type != LVAL_SYM) {
+    lval_del(f);
+    lval_del(v);
+    return lval_err("S-Expression does not start with Symbol!");
+  }
+
+  /* Call builtin with operator */
+  lval *result = builtin(v, f->sym);
+  lval_del(f);
+
+  return result;
+}
+
+/* Print a Lisp Value */
+void lval_print(lval *v) {
+  switch (v->type) {
+  case LVAL_NUM:
+    printf("%li", v->num);
+    break;
+  case LVAL_ERR:
+    printf("Error: %s", v->err);
+    break;
+  case LVAL_SYM:
+    printf("%s", v->sym);
+    break;
+  case LVAL_SEXPR:
+    lval_expr_print(v, '(', ')');
+    break;
+  case LVAL_QEXPR:
+    lval_expr_print(v, '{', '}');
+    break;
+  }
+}
+
+/* Print Lisp Value and attach a new line */
+void lval_println(lval *v) {
+  lval_print(v);
+  putchar('\n');
+}
+
+/* Specialized function to print Expressions */
+void lval_expr_print(lval *v, char open, char close) {
+  putchar(open);
+  for (int i = 0; i < v->count; i++) {
+    // Print value contained within
+    lval_print(v->cell[i]);
+
+    // Don't print trailing space if last element
+    if (i != (v->count - 1)) {
+      putchar(' ');
+    }
+  }
+  putchar(close);
 }

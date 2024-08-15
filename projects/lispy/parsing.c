@@ -7,177 +7,6 @@
 #include "lval.h"
 #include "mpc.h"
 
-void lval_expr_print(lval *v, char open, char close);
-
-// Debug function
-void lval_print(lval *v) {
-  switch (v->type) {
-  case LVAL_NUM:
-    printf("%li", v->num);
-    break;
-  case LVAL_ERR:
-    printf("Error: %s", v->err);
-    break;
-  case LVAL_SYM:
-    printf("%s", v->sym);
-    break;
-  case LVAL_SEXPR:
-    lval_expr_print(v, '(', ')');
-    break;
-  case LVAL_QEXPR:
-    lval_expr_print(v, '{', '}');
-    break;
-  }
-}
-
-void lval_expr_print(lval *v, char open, char close) {
-  putchar(open);
-  for (int i = 0; i < v->count; i++) {
-    // Print value contained within
-    lval_print(v->cell[i]);
-
-    // Don't print trailing space if last element
-    if (i != (v->count - 1)) {
-      putchar(' ');
-    }
-  }
-  putchar(close);
-}
-
-// Utility
-void lval_println(lval *v) {
-  lval_print(v);
-  putchar('\n');
-}
-
-lval *lval_pop(lval *v, int i) {
-  /* Find item at "i" */
-  lval *x = v->cell[i];
-
-  /* Shift memory after the item at "i" over the top */
-  memmove(&v->cell[i], &v->cell[i + 1], sizeof(lval *) * (v->count - i - 1));
-
-  /* Decrease the count of items in the list */
-  v->count--;
-
-  /* Reallocate the memory used */
-  v->cell = realloc(v->cell, sizeof(lval *) * v->count);
-  return x;
-}
-
-lval *lval_take(lval *v, int i) {
-  lval *x = lval_pop(v, i);
-  lval_del(v);
-  return x;
-}
-
-lval *builtin_op(lval *a, char *op) {
-  /* Ensure all arguments are numbers */
-  for (int i = 0; i < a->count; i++) {
-    if (a->cell[i]->type != LVAL_NUM) {
-      lval_del(a);
-      return lval_err("Cannot operate on non-Number!");
-    }
-  }
-
-  /* Pop first element */
-  lval *x = lval_pop(a, 0);
-
-  /*
-    If no arguments and op is sub, perform unary negation
-    This handles special values like (- 5) that should
-    evaluate to -5.
-  */
-  if ((strcmp(op, "-") == 0) && a->count == 0) {
-    x->num = -x->num;
-  }
-
-  /* While there are still elements remaining */
-  while (a->count > 0) {
-    /* Pop next element */
-    lval *y = lval_pop(a, 0);
-
-    if (strcmp(op, "+") == 0) {
-      x->num += y->num;
-    }
-    if (strcmp(op, "-") == 0) {
-      x->num -= y->num;
-    }
-    if (strcmp(op, "**") == 0) {
-      x->num = pow(x->num, y->num);
-    }
-    if (strcmp(op, "*") == 0) {
-      x->num *= y->num;
-    }
-    if (strcmp(op, "/") == 0) {
-      if (y->num == 0) {
-        lval_del(x);
-        lval_del(y);
-        x = lval_err("Division by Zero!");
-        break;
-      }
-      x->num /= y->num;
-    }
-    if (strcmp(op, "%") == 0) {
-      x->num %= y->num;
-    }
-
-    lval_del(y);
-  }
-
-  lval_del(a);
-
-  return x;
-}
-
-lval *lval_eval(lval *v);
-
-lval *lval_eval_sexpr(lval *v) {
-  /* Evaluate children */
-  for (int i = 0; i < v->count; i++) {
-    v->cell[i] = lval_eval(v->cell[i]);
-  }
-
-  /* Error checking */
-  for (int i = 0; i < v->count; i++) {
-    if (v->cell[i]->type == LVAL_ERR) {
-      return lval_take(v, i);
-    }
-  }
-
-  /* Empty Expression */
-  if (v->count == 0)
-    return v;
-
-  /* Single expression */
-  if (v->count == 1)
-    return lval_take(v, 0);
-
-  /* Ensure first element is a symbol */
-  lval *f = lval_pop(v, 0);
-  if (f->type != LVAL_SYM) {
-    lval_del(f);
-    lval_del(v);
-    return lval_err("S-Expression does not start with Symbol!");
-  }
-
-  /* Call builtin with operator */
-  lval *result = builtin_op(v, f->sym);
-  lval_del(f);
-
-  return result;
-}
-
-lval *lval_eval(lval *v) {
-  /* Evaluate S-Expressions */
-  if (v->type == LVAL_SEXPR) {
-    return lval_eval_sexpr(v);
-  }
-
-  /* Other types remain the same */
-  return v;
-}
-
 int main(void) {
   // Parsers definition
   mpc_parser_t *Number = mpc_new("number");
@@ -189,11 +18,13 @@ int main(void) {
 
   /* define the language syntax */
 
-  mpca_lang(MPCA_LANG_DEFAULT, "                                          \
+  mpca_lang(MPCA_LANG_DEFAULT, "             \
     number : /-?[0-9]+/ ;                    \
-    symbol : '+' | '-' | \"**\" | '*' | '/' | '%' ;   \
+    symbol : \"list\" | \"head\" | \"tail\"  \
+           | \"join\" \"eval\" | '+' | '-'   \
+           | \"**\" | '*' | '/' | '%' ;      \
     sexpr  : '(' <expr>* ')' ;               \
-    sexpr  : '{' <expr>* '}' ;               \
+    qexpr  : '{' <expr>* '}' ;               \
     expr   : <number> | <symbol> | <sexpr> | <qexpr> ; \
     lispy  : /^/ <expr>* /$/ ;               \
   ",
@@ -226,7 +57,7 @@ int main(void) {
   }
 
   // Delete the parsers
-  mpc_cleanup(6, Number, Symbol, Sexpr, Sexpr, Expr, Lispy);
+  mpc_cleanup(6, Number, Symbol, Sexpr, Qexpr, Expr, Lispy);
 
   return EXIT_SUCCESS;
 }

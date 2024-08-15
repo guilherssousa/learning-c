@@ -31,10 +31,24 @@ lval *lval_sexpr(void);
 lval *lval_qexpr(void);
 
 /* Memory handling methods */
-void lval_del(lval *v);
 lval *lval_add(lval *v, lval *x);
+void lval_del(lval *v);
 
 /* Program reading methods */
-lval *lval_read_num(mpc_ast_t *t);
 lval *lval_read(mpc_ast_t *t);
+lval *lval_read_num(mpc_ast_t *t);
+
+/* Methods for dealing with cells */
+lval *lval_pop(lval *v, int i);
+lval *lval_take(lval *v, int i);
+lval *lval_join(lval *v, lval *y);
+
+/* Methods for evaluating Lisp Values */
+lval *lval_eval(lval *v);
+lval *lval_eval_sexpr(lval *v);
+
+/* Methods for printing Lisp Values */
+void lval_print(lval *v);
+void lval_expr_print(lval *v, char open, char close);
+void lval_println(lval *v);
 #endif
