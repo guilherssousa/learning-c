@@ -45,3 +45,54 @@ lval *lval_sexpr(void) {
 
   return v;
 }
+
+/* Create a pointer to a new *empty* Qexpr lval */
+lval *lval_qexpr(void) {
+  lval *v = malloc(sizeof(lval));
+
+  v->type = LVAL_QEXPR;
+  v->count = 0;
+  v->cell = NULL;
+
+  return v;
+}
+
+/* Expand Lisp Value */
+lval *lval_add(lval *v, lval *x) {
+  v->count++;
+  v->cell = realloc(v->cell, sizeof(lval *) * v->count);
+  v->cell[v->count - 1] = x;
+
+  return v;
+}
+
+/* Remove Lisp Value from memory */
+void lval_del(lval *v) {
+  switch (v->type) {
+  // Number does not have pointers, so break
+  case LVAL_NUM:
+    break;
+
+  // For Error or Symbol, free the string data
+  case LVAL_ERR:
+    free(v->err);
+    break;
+  case LVAL_SYM:
+    free(v->sym);
+    break;
+
+  // For Symbol Expression, delete all elements inside
+  case LVAL_QEXPR:
+  case LVAL_SEXPR:
+    for (int i = 0; i < v->count; i++) {
+      lval_del(v->cell[i]);
+    }
+    //
+    // Free the memory used to store pointers
+    free(v->cell);
+    break;
+  }
+
+  // Free the memory alocated for the lisp value
+  free(v);
+}

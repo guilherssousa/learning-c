@@ -2,7 +2,7 @@
 
 ## Features
 
-- S-Expressions
+- Symbolic Expressions
 - `%` and `**` operators
 
 Coisas que aprendi enquanto desenvolvia esse projeto:

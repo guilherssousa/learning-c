@@ -7,13 +7,6 @@
 #include "lval.h"
 #include "mpc.h"
 
-lval *lval_add(lval *v, lval *x) {
-  v->count++;
-  v->cell = realloc(v->cell, sizeof(lval *) * v->count);
-  v->cell[v->count - 1] = x;
-
-  return v;
-}
 // Create a pointer to a new Symbol lval
 lval *lval_read_num(mpc_ast_t *t) {
   errno = 0;
@@ -56,35 +49,6 @@ lval *lval_read(mpc_ast_t *t) {
   return x;
 }
 
-void lval_del(lval *v) {
-  switch (v->type) {
-  // Number does not have pointers, so break
-  case LVAL_NUM:
-    break;
-
-  // For Error or Symbol, free the string data
-  case LVAL_ERR:
-    free(v->err);
-    break;
-  case LVAL_SYM:
-    free(v->sym);
-    break;
-
-  // For Symbol Expression, delete all elements inside
-  case LVAL_SEXPR:
-    for (int i = 0; i < v->count; i++) {
-      lval_del(v->cell[i]);
-    }
-    //
-    // Free the memory used to store pointers
-    free(v->cell);
-    break;
-  }
-
-  // Free the memory alocated for the lisp value
-  free(v);
-}
-
 void lval_expr_print(lval *v, char open, char close);
 
 // Debug function
@@ -101,6 +65,9 @@ void lval_print(lval *v) {
     break;
   case LVAL_SEXPR:
     lval_expr_print(v, '(', ')');
+    break;
+  case LVAL_QEXPR:
+    lval_expr_print(v, '{', '}');
     break;
   }
 }
@@ -258,6 +225,7 @@ int main(void) {
   mpc_parser_t *Number = mpc_new("number");
   mpc_parser_t *Symbol = mpc_new("symbol");
   mpc_parser_t *Sexpr = mpc_new("sexpr");
+  mpc_parser_t *Qexpr = mpc_new("qexpr");
   mpc_parser_t *Expr = mpc_new("expr");
   mpc_parser_t *Lispy = mpc_new("lispy");
 
@@ -267,10 +235,11 @@ int main(void) {
     number : /-?[0-9]+/ ;                    \
     symbol : '+' | '-' | \"**\" | '*' | '/' | '%' ;   \
     sexpr  : '(' <expr>* ')' ;               \
-    expr   : <number> | <symbol> | <sexpr> ; \
+    sexpr  : '{' <expr>* '}' ;               \
+    expr   : <number> | <symbol> | <sexpr> | <qexpr> ; \
     lispy  : /^/ <expr>* /$/ ;               \
   ",
-            Number, Symbol, Sexpr, Expr, Lispy);
+            Number, Symbol, Sexpr, Qexpr, Expr, Lispy);
 
   printf("Lispy V0.1\n");
   printf("Press Ctrl+C to Exit\n");
@@ -299,7 +268,7 @@ int main(void) {
   }
 
   // Delete the parsers
-  mpc_cleanup(5, Number, Symbol, Sexpr, Expr, Lispy);
+  mpc_cleanup(6, Number, Symbol, Sexpr, Sexpr, Expr, Lispy);
 
   return EXIT_SUCCESS;
 }
