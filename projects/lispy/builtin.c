@@ -70,7 +70,7 @@ lval *builtin_head(lval *a) {
   LASSERT(a, a->count == 1, "Function 'head' passed too many arguments.");
 
   /* Only Q-Expressions should be evaluated by Head */
-  LASSERT(a, a->cell[0]->type != LVAL_QEXPR,
+  LASSERT(a, a->cell[0]->type == LVAL_QEXPR,
           "Function 'head' passed incorrect types!");
 
   /* If Q-Expression is empty */

@@ -113,10 +113,10 @@ lval *lval_read(mpc_ast_t *t) {
   if (strcmp(t->tag, ">") == 0) {
     x = lval_sexpr();
   }
-  if (strcmp(t->tag, "sexpr")) {
+  if (strstr(t->tag, "sexpr")) {
     x = lval_sexpr();
   }
-  if (strcmp(t->tag, "qexpr")) {
+  if (strstr(t->tag, "qexpr")) {
     x = lval_qexpr();
   }
 
