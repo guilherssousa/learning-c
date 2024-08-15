@@ -4,36 +4,8 @@
 #include <editline/history.h>
 #include <editline/readline.h>
 
+#include "lval.h"
 #include "mpc.h"
-
-typedef struct lval {
-  int type;
-  long num;
-
-  /* Error and symbol types have some string data */
-  char *err;
-  char *sym;
-
-  /* Count and pointer to a list of "lval*" */
-  int count;
-  struct lval **cell;
-} lval;
-
-// lval types
-enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_SEXPR };
-
-// lval error types
-enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
-
-// create a new number type lval
-lval *lval_num(long x) {
-  lval *v = malloc(sizeof(lval));
-
-  v->type = LVAL_NUM;
-  v->num = x;
-
-  return v;
-}
 
 lval *lval_add(lval *v, lval *x) {
   v->count++;
@@ -42,40 +14,7 @@ lval *lval_add(lval *v, lval *x) {
 
   return v;
 }
-
-// create a new error type lval
-lval *lval_err(char *m) {
-  lval *v = malloc(sizeof(lval));
-
-  v->type = LVAL_ERR;
-  v->err = malloc(strlen(m) + 1);
-  strcpy(v->err, m);
-
-  return v;
-}
-
 // Create a pointer to a new Symbol lval
-lval *lval_sym(char *s) {
-  lval *v = malloc(sizeof(lval));
-
-  v->type = LVAL_SYM;
-  v->sym = malloc(strlen(s) + 1);
-  strcpy(v->sym, s);
-
-  return v;
-}
-
-// Create a pointer to new *empty* Sexpr lval
-lval *lval_sexpr(void) {
-  lval *v = malloc(sizeof(lval));
-
-  v->type = LVAL_SEXPR;
-  v->count = 0;
-  v->cell = NULL;
-
-  return v;
-}
-
 lval *lval_read_num(mpc_ast_t *t) {
   errno = 0;
   long x = strtol(t->contents, NULL, 10);
@@ -255,7 +194,7 @@ lval *builtin_op(lval *a, char *op) {
       x->num %= y->num;
     }
     if (strcmp(op, "^") == 0) {
-      x->num ^= y->num;
+      x->num = pow(x->num, y->num);
     }
 
     lval_del(y);
@@ -314,21 +253,6 @@ lval *lval_eval(lval *v) {
   return v;
 }
 
-int number_of_nodes(mpc_ast_t *t) {
-  if (t->children_num == 0) {
-    return 1;
-  }
-
-  if (t->children_num >= 1) {
-    int total = 1;
-    for (int i = 0; i < t->children_num; i++) {
-      total = total + number_of_nodes(t->children[i]);
-    }
-  }
-
-  return 0;
-}
-
 int main(void) {
   // Parsers definition
   mpc_parser_t *Number = mpc_new("number");
@@ -341,7 +265,7 @@ int main(void) {
 
   mpca_lang(MPCA_LANG_DEFAULT, "                                          \
     number : /-?[0-9]+/ ;                    \
-    symbol : '+' | '-' | '*' | '/' ;         \
+    symbol : '+' | '-' | '*' | '/' | '^' | '%' ;   \
     sexpr  : '(' <expr>* ')' ;               \
     expr   : <number> | <symbol> | <sexpr> ; \
     lispy  : /^/ <expr>* /$/ ;               \
@@ -361,12 +285,7 @@ int main(void) {
     mpc_result_t r;
 
     if (mpc_parse("<stdin>", input, Lispy, &r)) {
-      // lval result = eval(r.output);
-      //
-      // lval_println(result);
-      //
-
-      lval *x = lval_read(r.output);
+      lval *x = lval_eval(lval_read(r.output));
       lval_println(x);
       lval_del(x);
 

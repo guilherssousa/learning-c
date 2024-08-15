@@ -5,10 +5,10 @@ CLLIBS=-ledit -lm
 DOPTIONS=-g
 
 all:
-	$(COMPILER) $(COPTIONS) parsing.c mpc.c $(CLLIBS) -o $(OUTPUT)
+	$(COMPILER) $(COPTIONS) parsing.c lval.c mpc.c $(CLLIBS) -o $(OUTPUT)
 
 debug:
-	$(COMPILER) $(COPTIONS) $(DOPTIONS) parsing.c mpc.c $(CLLIBS) -o $(OUTPUT)
+	$(COMPILER) $(COPTIONS) $(DOPTIONS) parsing.c lval.c mpc.c $(CLLIBS) -o $(OUTPUT)
 
 clean:
 	rm -f lispy
