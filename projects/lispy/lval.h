@@ -1,6 +1,8 @@
 #ifndef LVAL_H
 #define LVAL_H
 
+#include "mpc.h"
+
 /* Definition of a Lisp Value */
 typedef struct lval {
   int type;
@@ -32,4 +34,7 @@ lval *lval_qexpr(void);
 void lval_del(lval *v);
 lval *lval_add(lval *v, lval *x);
 
+/* Program reading methods */
+lval *lval_read_num(mpc_ast_t *t);
+lval *lval_read(mpc_ast_t *t);
 #endif
