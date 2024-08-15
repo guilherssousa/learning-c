@@ -35,7 +35,7 @@ lval *lval_sym(char *s) {
   return v;
 }
 
-// Create a pointer to new *empty* Sexpr lval
+/* Create a pointer to new *empty* Sexpr lval */
 lval *lval_sexpr(void) {
   lval *v = malloc(sizeof(lval));
 

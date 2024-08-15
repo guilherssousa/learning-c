@@ -3,6 +3,7 @@
 ## Features
 
 - S-Expressions
+- `%` and `**` operators
 
 Coisas que aprendi enquanto desenvolvia esse projeto:
 

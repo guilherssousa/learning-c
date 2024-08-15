@@ -22,7 +22,7 @@ lval *lval_read_num(mpc_ast_t *t) {
 }
 
 lval *lval_read(mpc_ast_t *t) {
-  // If Symbol or Nummber, return conversion to that type
+  /*   If Symbol or Number, return conversion to that type */
   if (strstr(t->tag, "number")) {
     return lval_read_num(t);
   }
@@ -30,7 +30,7 @@ lval *lval_read(mpc_ast_t *t) {
     return lval_sym(t->contents);
   }
 
-  // If root or sexpr then create empty list
+  /*   If root or Sexpr, create empty list */
   lval *x = NULL;
   if (strcmp(t->tag, ">") == 0) {
     x = lval_sexpr();
@@ -178,6 +178,9 @@ lval *builtin_op(lval *a, char *op) {
     if (strcmp(op, "-") == 0) {
       x->num -= y->num;
     }
+    if (strcmp(op, "**") == 0) {
+      x->num = pow(x->num, y->num);
+    }
     if (strcmp(op, "*") == 0) {
       x->num *= y->num;
     }
@@ -192,9 +195,6 @@ lval *builtin_op(lval *a, char *op) {
     }
     if (strcmp(op, "%") == 0) {
       x->num %= y->num;
-    }
-    if (strcmp(op, "^") == 0) {
-      x->num = pow(x->num, y->num);
     }
 
     lval_del(y);
@@ -265,7 +265,7 @@ int main(void) {
 
   mpca_lang(MPCA_LANG_DEFAULT, "                                          \
     number : /-?[0-9]+/ ;                    \
-    symbol : '+' | '-' | '*' | '/' | '^' | '%' ;   \
+    symbol : '+' | '-' | \"**\" | '*' | '/' | '%' ;   \
     sexpr  : '(' <expr>* ')' ;               \
     expr   : <number> | <symbol> | <sexpr> ; \
     lispy  : /^/ <expr>* /$/ ;               \
