@@ -1,5 +1,6 @@
 #include "lenv.h"
 #include "lval.h"
+#include <stdio.h>
 
 lenv *lenv_new(void) {
   lenv *e = malloc(sizeof(lenv));
@@ -39,7 +40,6 @@ lval *lenv_get(lenv *e, lval *k) {
 void lenv_put(lenv *e, lval *k, lval *v) {
   /* Iterate over all items in environment
     This is to see if variable already exists */
-
   for (int i = 0; i < e->count; i++) {
     /* If variable is found delete item at that position
       And replace with variable supplied by user */
@@ -58,4 +58,5 @@ void lenv_put(lenv *e, lval *k, lval *v) {
   /* Copy contents of lval and symbol string into new location */
   e->vals[e->count - 1] = lval_copy(v);
   e->syms[e->count - 1] = malloc(strlen(k->sym) + 1);
+  strcpy(e->syms[e->count - 1], k->sym);
 }
