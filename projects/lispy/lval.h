@@ -1,16 +1,23 @@
 #ifndef LVAL_H
 #define LVAL_H
 
+struct lval;
+typedef struct lval lval;
+struct lenv;
+typedef struct lenv lenv;
+
+#include "lenv.h"
 #include "mpc.h"
 
 /* Definition of a Lisp Value */
 typedef struct lval {
   int type;
-  long num;
 
-  /* Error and symbol types have some string data */
+  /* Content related */
+  long num;
   char *err;
   char *sym;
+  lbuiltin fun;
 
   /* Count and pointer to a list of "lval*" */
   int count;
@@ -18,15 +25,13 @@ typedef struct lval {
 } lval;
 
 /* lval types */
-enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_SEXPR, LVAL_QEXPR };
-
-/* lval error types */
-enum { LERR_DIV_ZERO, LERR_BAD_OP, LERR_BAD_NUM };
+enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_FUN, LVAL_SEXPR, LVAL_QEXPR };
 
 /* Methods to create Lisp Values */
 lval *lval_num(long x);
 lval *lval_err(char *m);
 lval *lval_sym(char *s);
+lval *lval_fun(lbuiltin func);
 lval *lval_sexpr(void);
 lval *lval_qexpr(void);
 
@@ -44,8 +49,11 @@ lval *lval_take(lval *v, int i);
 lval *lval_join(lval *v, lval *y);
 
 /* Methods for evaluating Lisp Values */
-lval *lval_eval(lval *v);
-lval *lval_eval_sexpr(lval *v);
+lval *lval_eval(lenv *e, lval *v);
+lval *lval_eval_sexpr(lenv *e, lval *v);
+
+/* Methods for copying Lisp Values */
+lval *lval_copy(lval *v);
 
 /* Methods for printing Lisp Values */
 void lval_print(lval *v);

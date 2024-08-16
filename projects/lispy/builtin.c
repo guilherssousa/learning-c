@@ -6,7 +6,7 @@
     return lval_err(err);                                                      \
   }
 
-lval *builtin_op(lval *a, char *op) {
+lval *builtin_op(lenv *e, lval *a, char *op) {
   /* Ensure all arguments are numbers */
   for (int i = 0; i < a->count; i++) {
     if (a->cell[i]->type != LVAL_NUM) {
@@ -65,7 +65,7 @@ lval *builtin_op(lval *a, char *op) {
   return x;
 }
 
-lval *builtin_head(lval *a) {
+lval *builtin_head(lenv *e, lval *a) {
   /* Check Error Conditions */
   LASSERT(a, a->count == 1, "Function 'head' passed too many arguments.");
 
@@ -86,7 +86,7 @@ lval *builtin_head(lval *a) {
   return v;
 }
 
-lval *builtin_tail(lval *a) {
+lval *builtin_tail(lenv *e, lval *a) {
   /* Check Error Conditions */
   LASSERT(a, a->count == 1, "Function 'tail' passed too many arguments.");
 
@@ -106,7 +106,7 @@ lval *builtin_tail(lval *a) {
   return v;
 }
 
-lval *builtin_len(lval *a) {
+lval *builtin_len(lenv *e, lval *a) {
   /* Check Error Conditions */
   LASSERT(a, a->count == 1, "Function 'len' passed too many arguments.");
 
@@ -124,14 +124,14 @@ lval *builtin_len(lval *a) {
 }
 
 /* Transform a S-Expression into a Q-Expression */
-lval *builtin_list(lval *a) {
+lval *builtin_list(lenv *e, lval *a) {
   a->type = LVAL_QEXPR;
 
   return a;
 }
 
 /* Transform a Q-Expression into a S-Expression and evaluate */
-lval *builtin_eval(lval *a) {
+lval *builtin_eval(lenv *e, lval *a) {
   LASSERT(a, a->count == 1, "Function 'eval' passed too many arguments!");
   LASSERT(a, a->cell[0]->type == LVAL_QEXPR,
           "Function 'eval' passed incorrect type!");
@@ -139,11 +139,11 @@ lval *builtin_eval(lval *a) {
   lval *x = lval_take(a, 0);
   x->type = LVAL_SEXPR;
 
-  return lval_eval(x);
+  return lval_eval(e, x);
 }
 
 /* Return the length of a Q-Expression */
-lval *builtin_join(lval *a) {
+lval *builtin_join(lenv *e, lval *a) {
   for (int i = 0; i < a->count; i++) {
     LASSERT(a, a->cell[i]->type == LVAL_QEXPR,
             "Function 'join' passed incorrect type!");
@@ -159,28 +159,37 @@ lval *builtin_join(lval *a) {
   return x;
 }
 
-lval *builtin(lval *a, char *func) {
-  if (strcmp("list", func) == 0)
-    return builtin_list(a);
+/* Basic Arithmetical operations */
+lval *builtin_add(lenv *e, lval *a) { return builtin_op(e, a, "+"); }
+lval *builtin_sub(lenv *e, lval *a) { return builtin_op(e, a, "-"); }
+lval *builtin_mul(lenv *e, lval *a) { return builtin_op(e, a, "*"); }
+lval *builtin_div(lenv *e, lval *a) { return builtin_op(e, a, "/"); }
+lval *builtin_mod(lenv *e, lval *a) { return builtin_op(e, a, "%"); }
+lval *builtin_pow(lenv *e, lval *a) { return builtin_op(e, a, "**"); }
 
-  if (strcmp("head", func) == 0)
-    return builtin_head(a);
+void lenv_add_builtin(lenv *e, char *name, lbuiltin func) {
+  lval *k = lval_sym(name);
+  lval *v = lval_fun(func);
 
-  if (strcmp("tail", func) == 0)
-    return builtin_tail(a);
+  lenv_put(e, k, v);
+  lval_del(k);
+  lval_del(v);
+}
 
-  if (strcmp("len", func) == 0)
-    return builtin_len(a);
+void lenv_add_builtins(lenv *e) {
+  /* List functions */
+  lenv_add_builtin(e, "list", builtin_list);
+  lenv_add_builtin(e, "head", builtin_head);
+  lenv_add_builtin(e, "tail", builtin_tail);
+  lenv_add_builtin(e, "eval", builtin_eval);
+  lenv_add_builtin(e, "join", builtin_join);
+  lenv_add_builtin(e, "len", builtin_len);
 
-  if (strcmp("join", func) == 0)
-    return builtin_join(a);
-
-  if (strcmp("eval", func) == 0)
-    return builtin_eval(a);
-
-  if (strstr("**+-/*%", func))
-    return builtin_op(a, func);
-
-  lval_del(a);
-  return lval_err("Unknown function");
+  /* Mathematical Functions */
+  lenv_add_builtin(e, "+", builtin_add);
+  lenv_add_builtin(e, "-", builtin_sub);
+  lenv_add_builtin(e, "*", builtin_mul);
+  lenv_add_builtin(e, "/", builtin_div);
+  lenv_add_builtin(e, "%", builtin_mod);
+  lenv_add_builtin(e, "**", builtin_pow);
 }

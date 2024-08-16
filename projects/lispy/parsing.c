@@ -4,6 +4,8 @@
 #include <editline/history.h>
 #include <editline/readline.h>
 
+#include "builtin.h"
+#include "lenv.h"
 #include "lval.h"
 #include "mpc.h"
 
@@ -20,10 +22,7 @@ int main(void) {
 
   mpca_lang(MPCA_LANG_DEFAULT, "             \
     number : /-?[0-9]+/ ;                    \
-    symbol : \"list\" | \"head\" | \"tail\"  \
-           | \"join\" | \"eval\" | \"len\"   \
-           | '+' | '-'                       \
-           | \"**\" | '*' | '/' | '%' ;      \
+    symbol : /[a-zA-Z0-9_+%**\\-*\\/\\\\=<>!&]+/ ;\
     sexpr  : '(' <expr>* ')' ;               \
     qexpr  : '{' <expr>* '}' ;               \
     expr   : <number> | <symbol> | <sexpr> | <qexpr> ; \
@@ -33,6 +32,9 @@ int main(void) {
 
   printf("Lispy V0.1\n");
   printf("Press Ctrl+C to Exit\n");
+
+  lenv *e = lenv_new();
+  lenv_add_builtins(e);
 
   while (1) {
     /* output message */
@@ -44,7 +46,7 @@ int main(void) {
     mpc_result_t r;
 
     if (mpc_parse("<stdin>", input, Lispy, &r)) {
-      lval *x = lval_eval(lval_read(r.output));
+      lval *x = lval_eval(e, lval_read(r.output));
       lval_println(x);
       lval_del(x);
 
