@@ -13,7 +13,12 @@ lval *builtin_len(lenv *e, lval *a);
 lval *builtin_list(lenv *e, lval *a);
 lval *builtin_eval(lenv *e, lval *a);
 lval *builtin_join(lenv *e, lval *a);
+
+/* Variables, functions, etc. */
+lval *builtin_var(lenv *e, lval *a, char *func);
 lval *builtin_def(lenv *e, lval *a);
+lval *builtin_put(lenv *e, lval *a);
+lval *builtin_lambda(lenv *e, lval *a);
 
 /* Basic Arithmetical operations */
 lval *builtin_add(lenv *e, lval *a);

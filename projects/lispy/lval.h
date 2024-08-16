@@ -13,13 +13,18 @@ typedef struct lenv lenv;
 typedef struct lval {
   int type;
 
-  /* Content related */
+  /* Basic */
   long num;
   char *err;
   char *sym;
-  lbuiltin fun;
 
-  /* Count and pointer to a list of "lval*" */
+  /* Function related */
+  lbuiltin builtin;
+  lenv *env;
+  lval *formals;
+  lval *body;
+
+  /* Expression */
   int count;
   struct lval **cell;
 } lval;
@@ -32,6 +37,7 @@ lval *lval_num(long x);
 lval *lval_err(char *fmt, ...);
 lval *lval_sym(char *s);
 lval *lval_fun(lbuiltin func);
+lval *lval_lambda(lval *formals, lval *body);
 lval *lval_sexpr(void);
 lval *lval_qexpr(void);
 
@@ -49,6 +55,7 @@ lval *lval_take(lval *v, int i);
 lval *lval_join(lval *v, lval *y);
 
 /* Methods for evaluating Lisp Values */
+lval *lval_call(lenv *e, lval *f, lval *a);
 lval *lval_eval(lenv *e, lval *v);
 lval *lval_eval_sexpr(lenv *e, lval *v);
 

@@ -68,11 +68,11 @@ lval *builtin_op(lenv *e, lval *a, char *op) {
       }
       x->num /= y->num;
     }
-    if (strcmp(op, "%") == 0) {
-      x->num %= y->num;
-    }
     if (strcmp(op, "**") == 0) {
       x->num = pow(x->num, y->num);
+    }
+    if (strcmp(op, "%") == 0) {
+      x->num %= y->num;
     }
 
     lval_del(y);
@@ -159,34 +159,65 @@ lval *builtin_join(lenv *e, lval *a) {
   return x;
 }
 
-/* Define a Symbol for a value */
-lval *builtin_def(lenv *e, lval *a) {
-  LASSERT_NUM("def", a, 1);
+lval *builtin_var(lenv *e, lval *a, char *func) {
+  LASSERT_TYPE(func, a, 0, LVAL_QEXPR);
 
-  /* First element is Symbol List */
   lval *syms = a->cell[0];
 
-  /* Ensure all elements of first list are symbols */
   for (int i = 0; i < syms->count; i++) {
-    LASSERT(a, syms->cell[i]->type == LVAL_SYM,
-            "Function 'def' had passed incorrect type for argument %i. "
-            "Got %s, Expected %s.",
-            ltype_name(syms->cell[i]->type), ltype_name(LVAL_SYM));
+    LASSERT(a, (syms->cell[i]->type == LVAL_SYM),
+            "Function '%s' cannot define non-Symbol."
+            "Got %s, expected %s.",
+            func, ltype_name(syms->cell[i]->type), ltype_name(LVAL_SYM));
   }
 
-  /* Check correct number of symbols and values */
-  LASSERT(a, syms->count == a->count - 1,
-          "Function 'def' cannot define correct number of values to symbols. "
+  LASSERT(a, (syms->count == a->count - 1),
+          "Function '%s' passed too many arguments for symbols."
           "Got %i, expected %i.",
-          syms->count, a->count - 1);
+          func, syms->count, a->count - 1);
 
-  /* Assign a copy for each value for its correspondent symbol */
   for (int i = 0; i < syms->count; i++) {
-    lenv_put(e, syms->cell[i], a->cell[i + 1]);
+    /* Diferentiate between 'def' and 'put'
+     * If 'def': Define in global (outermost) environment.
+     * If 'put': Define in local environment.
+     */
+
+    if (strcmp(func, "def") == 0) {
+      lenv_def(e, syms->cell[i], a->cell[i + 1]);
+    }
+    if (strcmp(func, "=") == 0) {
+      lenv_put(e, syms->cell[i], a->cell[i + 1]);
+    }
   }
 
   lval_del(a);
   return lval_sexpr();
+}
+
+lval *builtin_def(lenv *e, lval *a) { return builtin_var(e, a, "="); }
+
+lval *builtin_put(lenv *e, lval *a) { return builtin_var(e, a, "="); }
+
+/* User-defined functions */
+lval *builtin_lambda(lenv *e, lval *a) {
+  /* Check for Formal Arguments and Body, both Q-Expressions */
+  LASSERT_NUM("\\", a, 2);
+  LASSERT_TYPE("\\", a, 0, LVAL_QEXPR);
+  LASSERT_TYPE("\\", a, 1, LVAL_QEXPR);
+
+  /* Check first Q-Expression contains only Symbols */
+  for (int i = 0; i < a->cell[0]->count; i++) {
+    LASSERT(a, (a->cell[0]->cell[i]->type == LVAL_SYM),
+            "Cannot define non-Symbol. Got %s, expected %s.",
+            ltype_name(a->cell[0]->cell[i]->type), ltype_name(LVAL_SYM));
+  }
+
+  /* Pop the first two arguments and pass tthem to lval_lambda */
+  lval *formals = lval_pop(a, 0);
+  lval *body = lval_pop(a, 0);
+  lval_del(a);
+
+  return lval_lambda(formals, body);
 }
 
 /* Basic Arithmetical operations */
@@ -214,7 +245,10 @@ void lenv_add_builtins(lenv *e) {
   lenv_add_builtin(e, "eval", builtin_eval);
   lenv_add_builtin(e, "join", builtin_join);
   lenv_add_builtin(e, "len", builtin_len);
+
+  /* Function-related Functions */
   lenv_add_builtin(e, "def", builtin_def);
+  lenv_add_builtin(e, "=", builtin_put);
 
   /* Mathematical Functions */
   lenv_add_builtin(e, "+", builtin_add);
@@ -222,5 +256,6 @@ void lenv_add_builtins(lenv *e) {
   lenv_add_builtin(e, "*", builtin_mul);
   lenv_add_builtin(e, "/", builtin_div);
   lenv_add_builtin(e, "%", builtin_mod);
+  lenv_add_builtin(e, "\\", builtin_lambda);
   lenv_add_builtin(e, "**", builtin_pow);
 }

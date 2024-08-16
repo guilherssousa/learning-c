@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "builtin.h"
+#include "ltype.h"
 #include "lval.h"
 
 /* create a new number type lval */
@@ -54,7 +56,24 @@ lval *lval_fun(lbuiltin func) {
   lval *v = malloc(sizeof(lval));
 
   v->type = LVAL_FUN;
-  v->fun = func;
+  v->builtin = func;
+
+  return v;
+}
+
+lval *lval_lambda(lval *formals, lval *body) {
+  lval *v = malloc(sizeof(lval));
+  v->type = LVAL_FUN;
+
+  /* Set builtin to NULL */
+  v->builtin = NULL;
+
+  /* Create a Lambda-specific Environment */
+  v->env = lenv_new();
+
+  /* Set Formals and Body */
+  v->formals = formals;
+  v->body = body;
 
   return v;
 }
@@ -95,6 +114,11 @@ void lval_del(lval *v) {
   switch (v->type) {
   // Number or Function does not have pointers, so break
   case LVAL_FUN:
+    if (!v->builtin) {
+      lenv_del(v->env);
+      lval_del(v->formals);
+      lval_del(v->body);
+    }
   case LVAL_NUM:
     break;
 
@@ -200,6 +224,58 @@ lval *lval_take(lval *v, int i) {
   return x;
 }
 
+/*
+ * Check if it's a builtin function; if it is, run it.
+ * If not, bind arguments to formats field and evaluate body,
+ * using env as an environment, and calling the environment as a parent.
+ */
+lval *lval_call(lenv *e, lval *f, lval *a) {
+  /* If Builtin, simply call that */
+  if (f->builtin) {
+    return f->builtin(e, a);
+  }
+
+  int given = a->count;
+  int total = f->formals->count;
+
+  /* While arguments still remain to be processed */
+  while (a->count) {
+    /* If we ran out of formal arguments to bind */
+    if (f->formals->count == 0) {
+      lval_del(a);
+      return lval_err("Function passed too many arguments."
+                      "Got %i, expected %i.",
+                      given, total);
+    }
+
+    /* Pop the first symbol from the formals */
+    lval *sym = lval_pop(f->formals, 0);
+
+    /* Pop the next argument from the list */
+    lval *val = lval_pop(a, 0);
+
+    /* Delete symbol and value */
+    lval_del(sym);
+    lval_del(val);
+  }
+
+  /* Argument list is now bound so we can be cleaned up */
+  lval_del(a);
+
+  /* If all formals have been bound, evaluate */
+  if (f->formals->count == 0) {
+    /* Set environment parent to evaluation environment */
+    f->env->par = e;
+
+    /* Evaluate and return */
+
+    return builtin_eval(f->env, lval_add(lval_sexpr(), lval_copy(f->body)));
+  } else {
+    /* Otherwise, return partially evaluated function */
+    return lval_copy(f);
+  }
+}
+
 /* Receive a Lisp Value and evaluate it */
 lval *lval_eval(lenv *e, lval *v) {
   /* Evaluate Symbol */
@@ -243,13 +319,17 @@ lval *lval_eval_sexpr(lenv *e, lval *v) {
   /* Ensure first element is a funtion after evaluation */
   lval *f = lval_pop(v, 0);
   if (f->type != LVAL_FUN) {
-    lval_del(v);
+    lval *err = lval_err("S-Expression starts with incorrect type."
+                         "Got %s, expected %s.",
+                         ltype_name(f->type), ltype_name(LVAL_FUN));
     lval_del(f);
-    return lval_err("first element is not a function");
+    lval_del(v);
+
+    return err;
   }
 
-  /* Call builtin with operator */
-  lval *result = f->fun(e, v);
+  /* Call */
+  lval *result = lval_call(e, f, v);
   lval_del(f);
 
   return result;
@@ -265,7 +345,14 @@ lval *lval_copy(lval *v) {
     x->num = v->num;
     break;
   case LVAL_FUN:
-    x->fun = v->fun;
+    if (v->builtin) {
+      x->builtin = v->builtin;
+    } else {
+      x->builtin = NULL;
+      x->env = lenv_copy(v->env);
+      x->formals = lval_copy(v->formals);
+      x->body = lval_copy(v->body);
+    }
     break;
 
   /* Copy Strings using malloc and strcopy */
@@ -307,7 +394,15 @@ void lval_print(lval *v) {
     printf("%s", v->sym);
     break;
   case LVAL_FUN:
-    printf("<function>");
+    if (v->builtin) {
+      printf("<function>");
+    } else {
+      printf("(\\ ");
+      lval_print(v->formals);
+      putchar(' ');
+      lval_print(v->body);
+      putchar(')');
+    }
     break;
   case LVAL_SEXPR:
     lval_expr_print(v, '(', ')');
