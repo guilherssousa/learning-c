@@ -29,7 +29,7 @@ enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_FUN, LVAL_SEXPR, LVAL_QEXPR };
 
 /* Methods to create Lisp Values */
 lval *lval_num(long x);
-lval *lval_err(char *m);
+lval *lval_err(char *fmt, ...);
 lval *lval_sym(char *s);
 lval *lval_fun(lbuiltin func);
 lval *lval_sexpr(void);

@@ -13,6 +13,7 @@ lval *builtin_len(lenv *e, lval *a);
 lval *builtin_list(lenv *e, lval *a);
 lval *builtin_eval(lenv *e, lval *a);
 lval *builtin_join(lenv *e, lval *a);
+lval *builtin_def(lenv *e, lval *a);
 
 /* Basic Arithmetical operations */
 lval *builtin_add(lenv *e, lval *a);

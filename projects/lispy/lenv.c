@@ -34,7 +34,7 @@ lval *lenv_get(lenv *e, lval *k) {
   }
 
   /* If no symbol found, return error */
-  return lval_err("unbound symbol!");
+  return lval_err("unbound symbol '%s'", k->sym);
 }
 
 void lenv_put(lenv *e, lval *k, lval *v) {
