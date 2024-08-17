@@ -11,7 +11,7 @@
 #include "parser.h"
 
 int main(void) {
-  mpc_parser_t *Lispy = new_parser();
+  mpc_parser_t *Lispy = new_lispy_parser();
 
   printf("Lispy V0.1\n");
   printf("Press Ctrl+C to Exit\n");

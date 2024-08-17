@@ -4,7 +4,7 @@
 #include "mpc.h"
 
 /* Methods */
-mpc_parser_t *new_parser();
+mpc_parser_t *new_lispy_parser();
 void clean_parser();
 
 #endif

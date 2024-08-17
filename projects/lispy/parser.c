@@ -9,7 +9,7 @@ mpc_parser_t *Qexpr;
 mpc_parser_t *Expr;
 mpc_parser_t *Lispy;
 
-mpc_parser_t *new_parser() {
+mpc_parser_t *new_lispy_parser() {
   // Parsers definition
   mpc_parser_t *Number = mpc_new("number");
   mpc_parser_t *Symbol = mpc_new("symbol");
