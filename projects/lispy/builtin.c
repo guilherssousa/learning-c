@@ -201,9 +201,9 @@ lval *builtin_put(lenv *e, lval *a) { return builtin_var(e, a, "="); }
 /* User-defined functions */
 lval *builtin_lambda(lenv *e, lval *a) {
   /* Check for Formal Arguments and Body, both Q-Expressions */
-  LASSERT_NUM("\\", a, 2);
-  LASSERT_TYPE("\\", a, 0, LVAL_QEXPR);
-  LASSERT_TYPE("\\", a, 1, LVAL_QEXPR);
+  LASSERT_NUM("lambda", a, 2);
+  LASSERT_TYPE("lambda", a, 0, LVAL_QEXPR);
+  LASSERT_TYPE("lambda", a, 1, LVAL_QEXPR);
 
   /* Check first Q-Expression contains only Symbols */
   for (int i = 0; i < a->cell[0]->count; i++) {
@@ -247,6 +247,7 @@ void lenv_add_builtins(lenv *e) {
   lenv_add_builtin(e, "len", builtin_len);
 
   /* Function-related Functions */
+  lenv_add_builtin(e, "lambda", builtin_lambda);
   lenv_add_builtin(e, "def", builtin_def);
   lenv_add_builtin(e, "=", builtin_put);
 
@@ -256,6 +257,5 @@ void lenv_add_builtins(lenv *e) {
   lenv_add_builtin(e, "*", builtin_mul);
   lenv_add_builtin(e, "/", builtin_div);
   lenv_add_builtin(e, "%", builtin_mod);
-  lenv_add_builtin(e, "\\", builtin_lambda);
   lenv_add_builtin(e, "**", builtin_pow);
 }

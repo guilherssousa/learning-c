@@ -437,9 +437,9 @@ void lval_print(lval *v) {
     break;
   case LVAL_FUN:
     if (v->builtin) {
-      printf("<function>");
+      printf("<builtin function>");
     } else {
-      printf("(\\ ");
+      printf("(lambda ");
       lval_print(v->formals);
       putchar(' ');
       lval_print(v->body);
