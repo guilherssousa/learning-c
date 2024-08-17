@@ -6,6 +6,9 @@
 /* Arithmetics */
 lval *builtin_op(lenv *e, lval *a, char *op);
 
+/* Comparisons */
+lval *builtin_cmp(lenv *e, lval *a, char *op);
+
 /* Language functions */
 lval *builtin_head(lenv *e, lval *a);
 lval *builtin_tail(lenv *e, lval *a);
@@ -27,6 +30,12 @@ lval *builtin_mul(lenv *e, lval *a);
 lval *builtin_div(lenv *e, lval *a);
 lval *builtin_mod(lenv *e, lval *a);
 lval *builtin_pow(lenv *e, lval *a);
+
+/* Basic comparision operations */
+lval *builtin_eq(lenv *e, lval *a);
+lval *builtin_ne(lenv *e, lval *a);
+lval *builtin_gt(lenv *e, lval *a);
+lval *builtin_le(lenv *e, lval *a);
 
 /* Assemble all those stuff together */
 void lenv_add_builtin(lenv *e, char *name, lbuiltin func);

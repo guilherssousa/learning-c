@@ -25,6 +25,43 @@
   LASSERT(args, args->cell[index]->count != 0,                                 \
           "Function '%s' passed {} for argument %i.", func, index)
 
+/* Function to return comparisons between two numbers. */
+lval *builtin_cmp(lenv *e, lval *a, char *op) {
+  LASSERT_NUM(op, a, 2);
+  LASSERT_TYPE(op, a, 0, LVAL_NUM);
+  LASSERT_TYPE(op, a, 1, LVAL_NUM);
+
+  int r;
+  /* Push two comparing values */
+  lval *ca = lval_pop(a, 0);
+  lval *cb = lval_pop(a, 0);
+
+  if (strcmp(op, "=") == 0) {
+    r = ca->num == cb->num;
+  }
+  if (strcmp(op, "!=") == 0) {
+    r = ca->num != cb->num;
+  }
+  if (strcmp(op, ">") == 0) {
+    r = ca->num > cb->num;
+  }
+  if (strcmp(op, "<") == 0) {
+    r = ca->num < cb->num;
+  }
+  if (strcmp(op, "<=") == 0) {
+    r = ca->num <= cb->num;
+  }
+  if (strcmp(op, ">=") == 0) {
+    r = ca->num <= cb->num;
+  }
+
+  lval_del(ca);
+  lval_del(cb);
+  lval_del(a);
+
+  return lval_num(r);
+}
+
 lval *builtin_op(lenv *e, lval *a, char *op) {
   /* Ensure all arguments are numbers */
   for (int i = 0; i < a->count; i++) {
@@ -228,6 +265,14 @@ lval *builtin_div(lenv *e, lval *a) { return builtin_op(e, a, "/"); }
 lval *builtin_mod(lenv *e, lval *a) { return builtin_op(e, a, "%"); }
 lval *builtin_pow(lenv *e, lval *a) { return builtin_op(e, a, "**"); }
 
+/* Conditional operators */
+lval *builtin_eq(lenv *e, lval *a) { return builtin_cmp(e, a, "="); }
+lval *builtin_ne(lenv *e, lval *a) { return builtin_cmp(e, a, "!="); }
+lval *builtin_gt(lenv *e, lval *a) { return builtin_cmp(e, a, ">"); }
+lval *builtin_lt(lenv *e, lval *a) { return builtin_cmp(e, a, "<"); }
+lval *builtin_gte(lenv *e, lval *a) { return builtin_cmp(e, a, ">="); }
+lval *builtin_lte(lenv *e, lval *a) { return builtin_cmp(e, a, "<="); }
+
 void lenv_add_builtin(lenv *e, char *name, lbuiltin func) {
   lval *k = lval_sym(name);
   lval *v = lval_fun(func);
@@ -258,4 +303,12 @@ void lenv_add_builtins(lenv *e) {
   lenv_add_builtin(e, "/", builtin_div);
   lenv_add_builtin(e, "%", builtin_mod);
   lenv_add_builtin(e, "**", builtin_pow);
+
+  /* Conditional operators */
+  lenv_add_builtin(e, "==", builtin_eq);
+  lenv_add_builtin(e, "!=", builtin_ne);
+  lenv_add_builtin(e, ">", builtin_gt);
+  lenv_add_builtin(e, "<", builtin_lt);
+  lenv_add_builtin(e, ">=", builtin_gte);
+  lenv_add_builtin(e, "<=", builtin_lte);
 }
