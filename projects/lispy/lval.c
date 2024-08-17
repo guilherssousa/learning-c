@@ -5,6 +5,7 @@
 #include "builtin.h"
 #include "ltype.h"
 #include "lval.h"
+#include "mpc.h"
 
 /* create a new number type lval */
 lval *lval_num(long x) {
@@ -47,6 +48,17 @@ lval *lval_sym(char *s) {
   v->type = LVAL_SYM;
   v->sym = malloc(strlen(s) + 1);
   strcpy(v->sym, s);
+
+  return v;
+}
+
+/* Create a new String lval */
+lval *lval_str(char *s) {
+  lval *v = malloc(sizeof(lval));
+
+  v->type = LVAL_STR;
+  v->str = malloc(strlen(s) + 1);
+  strcpy(v->str, s);
 
   return v;
 }
@@ -122,12 +134,15 @@ void lval_del(lval *v) {
   case LVAL_NUM:
     break;
 
-  // For Error or Symbol, free the string data
+  // For Error, Symbol or String, free the string data
   case LVAL_ERR:
     free(v->err);
     break;
   case LVAL_SYM:
     free(v->sym);
+    break;
+  case LVAL_STR:
+    free(v->str);
     break;
 
   // For Symbol Expression, delete all elements inside
@@ -148,9 +163,13 @@ void lval_del(lval *v) {
 
 /* Read the AST and return a Lisp Value */
 lval *lval_read(mpc_ast_t *t) {
-  /*   If Symbol or Number, return conversion to that type */
+
+  /*   If Symbol, String or Number, return conversion to that type */
   if (strstr(t->tag, "number")) {
     return lval_read_num(t);
+  }
+  if (strstr(t->tag, "string")) {
+    return lval_read_str(t);
   }
   if (strstr(t->tag, "symbol")) {
     return lval_sym(t->contents);
@@ -178,6 +197,8 @@ lval *lval_read(mpc_ast_t *t) {
       continue;
     if (strcmp(t->children[i]->contents, "}") == 0)
       continue;
+    if (strcmp(t->children[i]->tag, "comment") == 0)
+      continue;
     if (strcmp(t->children[i]->tag, "regex") == 0)
       continue;
 
@@ -192,6 +213,25 @@ lval *lval_read_num(mpc_ast_t *t) {
   errno = 0;
   long x = strtol(t->contents, NULL, 10);
   return errno != ERANGE ? lval_num(x) : lval_err("Invalid number");
+}
+
+/* Create a pointer to a new String lval */
+lval *lval_read_str(mpc_ast_t *t) {
+  /* Cut off the final quote character */
+  t->contents[strlen(t->contents) - 1] = '\0';
+
+  /* Copy the string missing out the first quote character */
+  char *unescaped = malloc(strlen(t->contents + 1) + 1);
+  strcpy(unescaped, t->contents + 1);
+
+  /* Pass through the unescape function */
+  unescaped = mpcf_unescape(unescaped);
+
+  /* Create a new Lisp Value using the string */
+  lval *str = lval_str(unescaped);
+
+  free(unescaped);
+  return str;
 }
 
 lval *lval_join(lval *x, lval *y) {
@@ -406,6 +446,10 @@ lval *lval_copy(lval *v) {
     x->sym = malloc(strlen(v->sym) + 1);
     strcpy(x->sym, v->sym);
     break;
+  case LVAL_STR:
+    x->str = malloc(strlen(v->str) + 1);
+    strcpy(x->str, v->str);
+    break;
 
   /* Copy Lists by copying each sub-expression */
   case LVAL_SEXPR:
@@ -446,6 +490,9 @@ void lval_print(lval *v) {
       putchar(')');
     }
     break;
+  case LVAL_STR:
+    lval_str_print(v);
+    break;
   case LVAL_SEXPR:
     lval_expr_print(v, '(', ')');
     break;
@@ -476,6 +523,19 @@ void lval_expr_print(lval *v, char open, char close) {
   putchar(close);
 }
 
+/* Specialized on printing User-input strings */
+void lval_str_print(lval *v) {
+  /* Create a copy of the string */
+  char *escaped = malloc(strlen(v->str) + 1);
+  strcpy(escaped, v->str);
+
+  /* Pass through an escape function */
+  escaped = mpcf_escape(escaped);
+  printf("\"%s\"", escaped);
+
+  free(escaped);
+}
+
 int lval_eq(lval *x, lval *y) {
   /*Different types are always unequal*/
   if (x->type != y->type)
@@ -489,6 +549,8 @@ int lval_eq(lval *x, lval *y) {
     return strcmp(x->err, y->err);
   case LVAL_SYM:
     return strcmp(x->sym, y->sym);
+  case LVAL_STR:
+    return strcmp(x->str, y->str);
 
   /* If value is a list, compare every individual element */
   case LVAL_SEXPR:

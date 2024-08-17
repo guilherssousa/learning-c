@@ -17,6 +17,7 @@ typedef struct lval {
   long num;
   char *err;
   char *sym;
+  char *str;
 
   /* Function related */
   lbuiltin builtin;
@@ -30,12 +31,21 @@ typedef struct lval {
 } lval;
 
 /* lval types */
-enum { LVAL_ERR, LVAL_NUM, LVAL_SYM, LVAL_FUN, LVAL_SEXPR, LVAL_QEXPR };
+enum {
+  LVAL_ERR,
+  LVAL_NUM,
+  LVAL_SYM,
+  LVAL_STR,
+  LVAL_FUN,
+  LVAL_SEXPR,
+  LVAL_QEXPR
+};
 
 /* Methods to create Lisp Values */
 lval *lval_num(long x);
 lval *lval_err(char *fmt, ...);
 lval *lval_sym(char *s);
+lval *lval_str(char *s);
 lval *lval_fun(lbuiltin func);
 lval *lval_lambda(lval *formals, lval *body);
 lval *lval_sexpr(void);
@@ -48,6 +58,7 @@ void lval_del(lval *v);
 /* Program reading methods */
 lval *lval_read(mpc_ast_t *t);
 lval *lval_read_num(mpc_ast_t *t);
+lval *lval_read_str(mpc_ast_t *t);
 
 /* Methods for dealing with cells */
 lval *lval_pop(lval *v, int i);
@@ -65,6 +76,7 @@ lval *lval_copy(lval *v);
 /* Methods for printing Lisp Values */
 void lval_print(lval *v);
 void lval_expr_print(lval *v, char open, char close);
+void lval_str_print(lval *str);
 void lval_println(lval *v);
 
 /* Comparison functions */
