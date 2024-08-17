@@ -201,13 +201,13 @@ lval *builtin_var(lenv *e, lval *a, char *func) {
 
   for (int i = 0; i < syms->count; i++) {
     LASSERT(a, (syms->cell[i]->type == LVAL_SYM),
-            "Function '%s' cannot define non-Symbol."
+            "Function '%s' cannot define non-Symbol. "
             "Got %s, expected %s.",
             func, ltype_name(syms->cell[i]->type), ltype_name(LVAL_SYM));
   }
 
   LASSERT(a, (syms->count == a->count - 1),
-          "Function '%s' passed too many arguments for symbols."
+          "Function '%s' passed too many arguments for Symbols. "
           "Got %i, expected %i.",
           func, syms->count, a->count - 1);
 
