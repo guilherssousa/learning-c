@@ -66,4 +66,7 @@ lval *lval_copy(lval *v);
 void lval_print(lval *v);
 void lval_expr_print(lval *v, char open, char close);
 void lval_println(lval *v);
+
+/* Comparison functions */
+int lval_eq(lval *x, lval *y);
 #endif

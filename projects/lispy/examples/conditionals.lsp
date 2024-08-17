@@ -1,3 +1,5 @@
+if (== (+ 1 1) 2) {1337} {41}
+
 (> 50 10) // should return 1
 (!= 50 10) // should return 1
 (= 50 10) // should return 0

@@ -35,7 +35,12 @@ lval *builtin_pow(lenv *e, lval *a);
 lval *builtin_eq(lenv *e, lval *a);
 lval *builtin_ne(lenv *e, lval *a);
 lval *builtin_gt(lenv *e, lval *a);
-lval *builtin_le(lenv *e, lval *a);
+lval *builtin_lt(lenv *e, lval *a);
+lval *builtin_gte(lenv *e, lval *a);
+lval *builtin_lte(lenv *e, lval *a);
+
+/* Conditional control operations */
+lval *builtin_if(lenv *e, lval *a);
 
 /* Assemble all those stuff together */
 void lenv_add_builtin(lenv *e, char *name, lbuiltin func);

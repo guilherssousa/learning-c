@@ -28,20 +28,12 @@
 /* Function to return comparisons between two numbers. */
 lval *builtin_cmp(lenv *e, lval *a, char *op) {
   LASSERT_NUM(op, a, 2);
-  LASSERT_TYPE(op, a, 0, LVAL_NUM);
-  LASSERT_TYPE(op, a, 1, LVAL_NUM);
 
   int r;
   /* Push two comparing values */
   lval *ca = lval_pop(a, 0);
   lval *cb = lval_pop(a, 0);
 
-  if (strcmp(op, "=") == 0) {
-    r = ca->num == cb->num;
-  }
-  if (strcmp(op, "!=") == 0) {
-    r = ca->num != cb->num;
-  }
   if (strcmp(op, ">") == 0) {
     r = ca->num > cb->num;
   }
@@ -53,6 +45,12 @@ lval *builtin_cmp(lenv *e, lval *a, char *op) {
   }
   if (strcmp(op, ">=") == 0) {
     r = ca->num <= cb->num;
+  }
+  if (strcmp(op, "==") == 0) {
+    r = lval_eq(ca, cb);
+  }
+  if (strcmp(op, "!=") == 0) {
+    r = lval_eq(ca, cb);
   }
 
   lval_del(ca);
@@ -235,6 +233,30 @@ lval *builtin_def(lenv *e, lval *a) { return builtin_var(e, a, "def"); }
 
 lval *builtin_put(lenv *e, lval *a) { return builtin_var(e, a, "="); }
 
+/* Receive a value, and execute based on result */
+lval *builtin_if(lenv *e, lval *a) {
+  LASSERT_NUM("if", a, 3);
+  LASSERT_TYPE("if", a, 0, LVAL_NUM);
+  LASSERT_TYPE("if", a, 1, LVAL_QEXPR);
+  LASSERT_TYPE("if", a, 2, LVAL_QEXPR);
+
+  /* This marks both expressions as evaluable */
+  lval *x;
+  a->cell[1]->type = LVAL_SEXPR;
+  a->cell[2]->type = LVAL_SEXPR;
+
+  if (a->cell[0]->num) {
+    x = lval_eval(e, lval_pop(a, 1));
+  } else {
+    x = lval_eval(e, lval_pop(a, 2));
+  }
+
+  /* Delete argument list and return */
+
+  lval_del(a);
+  return x;
+}
+
 /* User-defined functions */
 lval *builtin_lambda(lenv *e, lval *a) {
   /* Check for Formal Arguments and Body, both Q-Expressions */
@@ -266,7 +288,7 @@ lval *builtin_mod(lenv *e, lval *a) { return builtin_op(e, a, "%"); }
 lval *builtin_pow(lenv *e, lval *a) { return builtin_op(e, a, "**"); }
 
 /* Conditional operators */
-lval *builtin_eq(lenv *e, lval *a) { return builtin_cmp(e, a, "="); }
+lval *builtin_eq(lenv *e, lval *a) { return builtin_cmp(e, a, "=="); }
 lval *builtin_ne(lenv *e, lval *a) { return builtin_cmp(e, a, "!="); }
 lval *builtin_gt(lenv *e, lval *a) { return builtin_cmp(e, a, ">"); }
 lval *builtin_lt(lenv *e, lval *a) { return builtin_cmp(e, a, "<"); }
@@ -295,6 +317,9 @@ void lenv_add_builtins(lenv *e) {
   lenv_add_builtin(e, "lambda", builtin_lambda);
   lenv_add_builtin(e, "def", builtin_def);
   lenv_add_builtin(e, "=", builtin_put);
+
+  /* Flow-control operations */
+  lenv_add_builtin(e, "if", builtin_if);
 
   /* Mathematical Functions */
   lenv_add_builtin(e, "+", builtin_add);

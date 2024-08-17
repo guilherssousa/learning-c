@@ -475,3 +475,34 @@ void lval_expr_print(lval *v, char open, char close) {
   }
   putchar(close);
 }
+
+int lval_eq(lval *x, lval *y) {
+  /*Different types are always unequal*/
+  if (x->type != y->type)
+    return 0;
+
+  /* Compare based on types */
+  switch (x->type) {
+  case LVAL_NUM:
+    return x->num == y->num;
+  case LVAL_ERR:
+    return strcmp(x->err, y->err);
+  case LVAL_SYM:
+    return strcmp(x->sym, y->sym);
+
+  /* If value is a list, compare every individual element */
+  case LVAL_SEXPR:
+  case LVAL_QEXPR:
+    if (x->count != y->count)
+      return 0;
+    for (int i = 0; i < x->count; i++) {
+      if (!lval_eq(x->cell[i], y->cell[i]))
+        return 0;
+    }
+
+    return 1;
+    break;
+  }
+
+  return 0;
+}
