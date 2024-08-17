@@ -45,6 +45,9 @@ lval *builtin_lte(lenv *e, lval *a);
 /* Conditional control operations */
 lval *builtin_if(lenv *e, lval *a);
 
+/* I/O Functions */
+lval *builtin_print(lenv *e, lval *a);
+
 /* Assemble all those stuff together */
 void lenv_add_builtin(lenv *e, char *name, lbuiltin func);
 void lenv_add_builtins(lenv *e);

@@ -32,7 +32,6 @@ lval *builtin_load(lenv *e, lval *a) {
 
   /* Parse File given by string name */
   mpc_result_t r;
-
   if (parser_parse_contents(a->cell[0]->str, &r)) {
     /* Read contents */
     lval *expr = lval_read(r.output);
@@ -339,6 +338,32 @@ lval *builtin_lt(lenv *e, lval *a) { return builtin_cmp(e, a, "<"); }
 lval *builtin_gte(lenv *e, lval *a) { return builtin_cmp(e, a, ">="); }
 lval *builtin_lte(lenv *e, lval *a) { return builtin_cmp(e, a, "<="); }
 
+/* Print values */
+lval *builtin_print(lenv *e, lval *a) {
+  /* Print each argument followed by a space */
+  for (int i = 0; i < a->count; i++) {
+    lval_print(a->cell[i]);
+    putchar(' ');
+  }
+
+  /* Print newline and delete arguments */
+  putchar('\n');
+  lval_del(a);
+
+  return lval_sexpr();
+};
+
+/* Throw an error */
+lval *builtin_error(lenv *e, lval *a) {
+  LASSERT_NUM("error", a, 1);
+  LASSERT_TYPE("error", a, 0, LVAL_STR);
+
+  lval *err = lval_err(a->cell[0]->str);
+
+  lval_del(a);
+  return err;
+}
+
 void lenv_add_builtin(lenv *e, char *name, lbuiltin func) {
   lval *k = lval_sym(name);
   lval *v = lval_fun(func);
@@ -380,4 +405,9 @@ void lenv_add_builtins(lenv *e) {
   lenv_add_builtin(e, "<", builtin_lt);
   lenv_add_builtin(e, ">=", builtin_gte);
   lenv_add_builtin(e, "<=", builtin_lte);
+
+  /* I/O functions */
+  lenv_add_builtin(e, "load", builtin_load);
+  lenv_add_builtin(e, "print", builtin_print);
+  lenv_add_builtin(e, "error", builtin_error);
 }
