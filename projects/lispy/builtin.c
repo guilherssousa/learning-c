@@ -194,7 +194,7 @@ lval *builtin_var(lenv *e, lval *a, char *func) {
   return lval_sexpr();
 }
 
-lval *builtin_def(lenv *e, lval *a) { return builtin_var(e, a, "="); }
+lval *builtin_def(lenv *e, lval *a) { return builtin_var(e, a, "def"); }
 
 lval *builtin_put(lenv *e, lval *a) { return builtin_var(e, a, "="); }
 
@@ -212,7 +212,7 @@ lval *builtin_lambda(lenv *e, lval *a) {
             ltype_name(a->cell[0]->cell[i]->type), ltype_name(LVAL_SYM));
   }
 
-  /* Pop the first two arguments and pass tthem to lval_lambda */
+  /* Pop the first two arguments and pass them to lval_lambda */
   lval *formals = lval_pop(a, 0);
   lval *body = lval_pop(a, 0);
   lval_del(a);
