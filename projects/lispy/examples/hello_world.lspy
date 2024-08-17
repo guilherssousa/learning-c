@@ -1,0 +1,1 @@
+(def {fun} (lambda {args body} (def (head args) {lambda (tail args) body)})

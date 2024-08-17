@@ -3,6 +3,9 @@
 
 #include "lval.h"
 
+/* Run program files */
+lval *builtin_load(lenv *e, lval *a);
+
 /* Arithmetics */
 lval *builtin_op(lenv *e, lval *a, char *op);
 

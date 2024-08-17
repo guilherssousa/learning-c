@@ -1,5 +1,6 @@
 #include "ltype.h"
 #include "lval.h"
+#include "parser.h"
 
 #define LASSERT(args, cond, fmt, ...)                                          \
   if (!(cond)) {                                                               \
@@ -24,6 +25,49 @@
 #define LASSERT_NOT_EMPTY(func, args, index)                                   \
   LASSERT(args, args->cell[index]->count != 0,                                 \
           "Function '%s' passed {} for argument %i.", func, index)
+
+lval *builtin_load(lenv *e, lval *a) {
+  LASSERT_NUM("load", a, 1);
+  LASSERT_TYPE("load", a, 0, LVAL_STR);
+
+  /* Parse File given by string name */
+  mpc_result_t r;
+
+  if (parser_parse_contents(a->cell[0]->str, &r)) {
+    /* Read contents */
+    lval *expr = lval_read(r.output);
+    mpc_ast_delete(r.output);
+
+    /* Evaluate each Expression */
+    while (expr->count) {
+      lval *x = lval_eval(e, lval_pop(expr, 0));
+
+      /* If Evaluation leads to error, print it */
+      if (x->type == LVAL_ERR)
+        lval_println(x);
+
+      lval_del(x);
+    }
+
+    /* Delete expressoins and arguments */
+    lval_del(expr);
+    lval_del(a);
+
+    return lval_sexpr();
+  } else {
+    /* Get Parse error as String */
+    char *error = mpc_err_string(r.error);
+    mpc_err_delete(r.error);
+
+    /* Create new Error message using it */
+    lval *err = lval_err("Could not load Library %s.", error);
+    free(error);
+    lval_del(a);
+
+    /* Cleanup and return error */
+    return err;
+  }
+}
 
 /* Function to return comparisons between two numbers. */
 lval *builtin_cmp(lenv *e, lval *a, char *op) {
