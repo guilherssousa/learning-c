@@ -30,7 +30,7 @@ int main(void) {
     sexpr  : '(' <expr>* ')' ;               \
     qexpr  : '{' <expr>* '}' ;               \
     expr   : <number> | <symbol> | <string>  \
-            | <comment > |  <sexpr> | <qexpr> ; \
+            | <comment> | <sexpr> | <qexpr> ; \
     lispy  : /^/ <expr>* /$/ ;               \
   ",
             Number, Symbol, String, Comment, Sexpr, Qexpr, Expr, Lispy);
