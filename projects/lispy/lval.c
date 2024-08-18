@@ -401,7 +401,7 @@ lval *lval_eval_sexpr(lenv *e, lval *v) {
   /* Ensure first element is a funtion after evaluation */
   lval *f = lval_pop(v, 0);
   if (f->type != LVAL_FUN) {
-    lval *err = lval_err("S-Expression starts with incorrect type."
+    lval *err = lval_err("S-Expression starts with incorrect type. "
                          "Got %s, expected %s.",
                          ltype_name(f->type), ltype_name(LVAL_FUN));
     lval_del(f);
