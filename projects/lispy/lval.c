@@ -546,11 +546,11 @@ int lval_eq(lval *x, lval *y) {
   case LVAL_NUM:
     return x->num == y->num;
   case LVAL_ERR:
-    return strcmp(x->err, y->err);
+    return strcmp(x->err, y->err) == 0;
   case LVAL_SYM:
-    return strcmp(x->sym, y->sym);
+    return strcmp(x->sym, y->sym) == 0;
   case LVAL_STR:
-    return strcmp(x->str, y->str);
+    return strcmp(x->str, y->str) == 0;
 
   /* If value is a list, compare every individual element */
   case LVAL_SEXPR:
