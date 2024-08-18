@@ -1,15 +1,17 @@
-CFILES=main.c parser.c lval.c lenv.c ltype.c builtin.c mpc.c
+CFILES=$(wildcard *.c)
+obj=$(CFILES:.c=.o)
 COMPILER=gcc
-COPTIONS=-std=c99 -Wall 
+COPTIONS=-std=c99 -Wall
 OUTPUT=lispy
 CLLIBS=-ledit -lm
 DOPTIONS=-g
 
-all:
+lispy: ${obj}
 	$(COMPILER) $(COPTIONS) $(CFILES) $(CLLIBS) -o $(OUTPUT)
 
 debug:
 	$(COMPILER) $(COPTIONS) $(DOPTIONS) $(CFILES) $(CLLIBS) -o $(OUTPUT)
 
+.PHONY: clean
 clean:
-	rm -f lispy
+	rm -f $(obj) lispy
