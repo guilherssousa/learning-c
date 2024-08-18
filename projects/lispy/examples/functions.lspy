@@ -1,11 +1,8 @@
-/* 
-Define the variable `func` as a function that receives two arguments: args, body. 
-*/
-
+; Define the variable `func` as a function that receives two arguments: args, body.
 (def {fun} (lambda {args body} {def (head args) (lambda (tail args) body)}))
 
-/* When using `fun`, the first value on `args` is the function name. */
+; When using `fun`, the first value on `args` is the function name.
 (fun {add x y} {+ x y})
 
-/* You can use these functions like: */
-(add 10 20) // should return 30
+; You can use these functions like:
+(print (add 10 20)) ; should return 30
